@@ -1,0 +1,1 @@
+# go-spongebob-clean-arch
