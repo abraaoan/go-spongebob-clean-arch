@@ -6,6 +6,7 @@ Microserviço em Go responsável por armazenar e expor informações da série *
 
 Estrutura de diretórios:
 
+```text
 spongebob-service/  
 ├── cmd/                → Entrada da aplicação (main)  
 ├── internal/  
@@ -16,6 +17,7 @@ spongebob-service/
 │   └── delivery/       → Camada de entrega (HTTP handlers)  
 ├── pkg/                → Pacotes auxiliares (logger, utils)  
 └── test/               → Testes de integração e mocks  
+```
 
 ## 🧩 Funcionalidades
 
