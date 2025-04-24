@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/entity"
+	"github.com/abraaoan/go-spongebob-clean-arch/internal/infrastructure/cache"
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/repository"
 	"github.com/google/uuid"
 )
@@ -16,11 +17,12 @@ type SeasonUseCase interface {
 }
 
 type seasonUseCase struct {
-	repo repository.SeasonRepository
+	repo  repository.SeasonRepository
+	cache *cache.SeasonCache
 }
 
-func NewSeasonUseCase(repo repository.SeasonRepository) SeasonUseCase {
-	return &seasonUseCase{repo: repo}
+func NewSeasonUseCase(repo repository.SeasonRepository, cache *cache.SeasonCache) SeasonUseCase {
+	return &seasonUseCase{repo: repo, cache: cache}
 }
 
 func (uc *seasonUseCase) Create(season *entity.Season) (string, error) {
@@ -35,7 +37,17 @@ func (uc *seasonUseCase) Create(season *entity.Season) (string, error) {
 }
 
 func (uc *seasonUseCase) GetByID(id string) (*entity.Season, error) {
-	return uc.repo.GetById(id)
+	if s, ok := uc.cache.Get(id); ok {
+		return s, nil
+	}
+
+	s, err := uc.repo.GetById(id)
+	if err != nil || s == nil {
+		return s, err
+	}
+
+	uc.cache.Set(id, s)
+	return s, nil
 }
 
 func (uc *seasonUseCase) List() ([]*entity.Season, error) {

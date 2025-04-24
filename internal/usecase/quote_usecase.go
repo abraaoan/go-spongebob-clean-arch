@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/entity"
+	"github.com/abraaoan/go-spongebob-clean-arch/internal/infrastructure/cache"
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/repository"
 	"github.com/google/uuid"
 )
@@ -17,11 +18,12 @@ type QuoteUseCase interface {
 }
 
 type quoteUseCase struct {
-	repo repository.QuoteRepository
+	repo  repository.QuoteRepository
+	cache *cache.QuoteCache
 }
 
-func NewQuoteUseCase(repo repository.QuoteRepository) QuoteUseCase {
-	return &quoteUseCase{repo: repo}
+func NewQuoteUseCase(repo repository.QuoteRepository, cache *cache.QuoteCache) QuoteUseCase {
+	return &quoteUseCase{repo: repo, cache: cache}
 }
 
 func (uc *quoteUseCase) Create(quote *entity.Quote) (string, error) {
@@ -36,7 +38,17 @@ func (uc *quoteUseCase) Create(quote *entity.Quote) (string, error) {
 }
 
 func (uc *quoteUseCase) GetByID(id string) (*entity.Quote, error) {
-	return uc.repo.GetByID(id)
+	if q, ok := uc.cache.Get(id); ok {
+		return q, nil
+	}
+
+	q, err := uc.repo.GetByID(id)
+	if err != nil || q == nil {
+		return q, err
+	}
+
+	uc.cache.Set(id, q)
+	return q, nil
 }
 
 func (uc *quoteUseCase) ListByCharacter(characterID string) ([]*entity.Quote, error) {

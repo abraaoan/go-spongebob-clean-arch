@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/entity"
+	"github.com/abraaoan/go-spongebob-clean-arch/internal/infrastructure/cache"
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/repository"
 	"github.com/google/uuid"
 )
@@ -16,11 +17,12 @@ type CharacterUseCase interface {
 }
 
 type characterUseCase struct {
-	repo repository.CharacterRepository
+	repo  repository.CharacterRepository
+	cache *cache.CharacterCache
 }
 
-func NewCharacterUseCase(repo repository.CharacterRepository) CharacterUseCase {
-	return &characterUseCase{repo: repo}
+func NewCharacterUseCase(repo repository.CharacterRepository, cache *cache.CharacterCache) CharacterUseCase {
+	return &characterUseCase{repo: repo, cache: cache}
 }
 
 func (uc *characterUseCase) Create(character *entity.Character) (string, error) {
@@ -35,7 +37,19 @@ func (uc *characterUseCase) Create(character *entity.Character) (string, error) 
 }
 
 func (uc *characterUseCase) GetByID(id string) (*entity.Character, error) {
-	return uc.repo.GetByID(id)
+	if cached, ok := uc.cache.Get(id); ok {
+		return cached, nil
+	}
+
+	character, err := uc.repo.GetByID(id)
+	if err != nil || character == nil {
+		return character, err
+	}
+
+	// Save to cache.
+	uc.cache.Set(id, character)
+
+	return character, nil
 }
 
 func (uc *characterUseCase) List() ([]*entity.Character, error) {

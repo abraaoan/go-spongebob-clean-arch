@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/entity"
+	"github.com/abraaoan/go-spongebob-clean-arch/internal/infrastructure/cache"
 	"github.com/abraaoan/go-spongebob-clean-arch/internal/repository"
 	"github.com/google/uuid"
 )
@@ -17,11 +18,12 @@ type EpisodeUseCase interface {
 }
 
 type episodeUseCase struct {
-	repo repository.EpisodeRepository
+	repo  repository.EpisodeRepository
+	cache *cache.EpisodeCache
 }
 
-func NewEpisodeUseCase(repo repository.EpisodeRepository) EpisodeUseCase {
-	return &episodeUseCase{repo: repo}
+func NewEpisodeUseCase(repo repository.EpisodeRepository, cache *cache.EpisodeCache) EpisodeUseCase {
+	return &episodeUseCase{repo: repo, cache: cache}
 }
 
 func (uc *episodeUseCase) Create(episode *entity.Episode) (string, error) {
@@ -36,7 +38,17 @@ func (uc *episodeUseCase) Create(episode *entity.Episode) (string, error) {
 }
 
 func (uc *episodeUseCase) GetById(id string) (*entity.Episode, error) {
-	return uc.repo.GetById(id)
+	if e, ok := uc.cache.Get(id); ok {
+		return e, nil
+	}
+
+	e, err := uc.repo.GetById(id)
+	if err != nil || e == nil {
+		return e, err
+	}
+
+	uc.cache.Set(id, e)
+	return e, nil
 }
 
 func (uc *episodeUseCase) List() ([]*entity.Episode, error) {

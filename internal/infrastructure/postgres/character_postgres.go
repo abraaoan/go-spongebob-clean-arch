@@ -16,14 +16,14 @@ func NewCharacterPostgres(db *sql.DB) repository.CharacterRepository {
 }
 
 func (r *characterPostgres) Save(c *entity.Character) (string, error) {
-	query := `INSERT INT characters (id, name, description, created_at) VALUES ($1, $2, $3, $4)`
+	query := `INSERT INTO characters (id, name, description, created_at) VALUES ($1, $2, $3, $4)`
 	_, err := r.db.Exec(query, c.ID, c.Name, c.Description, c.CreatedAt)
 	return c.ID, err
 }
 
 func (r *characterPostgres) GetByID(id string) (*entity.Character, error) {
 	var c entity.Character
-	query := `SELECT id, name, description, create_at FROM characters WHERE id = $1`
+	query := `SELECT id, name, description, created_at FROM characters WHERE id = $1`
 	err := r.db.QueryRow(query, id).Scan(&c.ID, &c.Name, &c.Description, &c.CreatedAt)
 	if err != nil {
 		return nil, err
